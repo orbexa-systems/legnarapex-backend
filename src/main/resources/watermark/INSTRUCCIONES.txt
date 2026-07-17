@@ -1,0 +1,10 @@
+Coloca aquí el archivo de marca de agua: legnarapex.png
+
+Especificaciones recomendadas:
+- Formato: PNG con transparencia (canal alfa)
+- Dimensiones: 400-600px de ancho
+- Fondo transparente, texto/logo blanco o semi-transparente
+- Contenido sugerido: "LEGNAR APEX" o el logo de la marca
+
+El sistema aplica la marca en la esquina inferior derecha con 55% de opacidad.
+Si este archivo no existe, las fotos se procesan sin marca de agua (solo redimensionadas).
