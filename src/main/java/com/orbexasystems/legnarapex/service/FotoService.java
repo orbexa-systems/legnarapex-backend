@@ -24,48 +24,40 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FotoService {
 
-    private static final ZoneId ZONA_MX = ZoneId.of("America/Mexico_City");
-    private static final int DIAS_EXPIRACION = 8;
+    private static final ZoneId MX_ZONE = ZoneId.of("America/Mexico_City");
+    private static final int EXPIRY_DAYS = 8;
 
     private final FotoRepository fotoRepository;
     private final WatermarkService watermarkService;
     private final R2StorageService r2StorageService;
 
-    /**
-     * Flujo completo de subida:
-     * 1. Extrae código del nombre de archivo
-     * 2. Lee EXIF (fecha y hora de la toma)
-     * 3. Aplica marca de agua con Thumbnailator
-     * 4. Sube JPG resultante a Cloudflare R2
-     * 5. Persiste el registro en PostgreSQL
-     */
-    public Foto procesarYSubirFoto(UUID lugarId, MultipartFile file) {
+    public Foto processAndUploadPhoto(UUID locationId, MultipartFile file) {
         if (file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El archivo está vacío");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
         }
 
         try {
             byte[] bytes = file.getBytes();
-            String codigo = extraerCodigo(file.getOriginalFilename());
-            LocalDateTime fechaHora = extraerFechaHoraExif(bytes);
+            String code = extractCode(file.getOriginalFilename());
+            LocalDateTime photoDateTime = extractExifDateTime(bytes);
 
-            byte[] procesado = watermarkService.aplicarMarcaDeAgua(bytes);
+            byte[] processed = watermarkService.applyWatermark(bytes);
 
             UUID id = UUID.randomUUID();
             String objectKey = "fotos/" + id + ".jpg";
-            String urlFoto = r2StorageService.upload(objectKey, procesado);
+            String photoUrl = r2StorageService.upload(objectKey, processed);
 
-            OffsetDateTime ahora = OffsetDateTime.now(ZoneOffset.UTC);
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
             Foto foto = Foto.builder()
                     .id(id)
-                    .codigo(codigo)
-                    .lugarId(lugarId)
-                    .fechaFoto(fechaHora.toLocalDate())
-                    .horaFoto(fechaHora.toLocalTime())
-                    .urlFoto(urlFoto)
-                    .fechaSubida(ahora)
-                    .expiraEn(ahora.plusDays(DIAS_EXPIRACION))
+                    .codigo(code)
+                    .lugarId(locationId)
+                    .fechaFoto(photoDateTime.toLocalDate())
+                    .horaFoto(photoDateTime.toLocalTime())
+                    .urlFoto(photoUrl)
+                    .fechaSubida(now)
+                    .expiraEn(now.plusDays(EXPIRY_DAYS))
                     .build();
 
             return fotoRepository.save(foto);
@@ -73,52 +65,52 @@ public class FotoService {
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error procesando foto {}: {}", file.getOriginalFilename(), e.getMessage(), e);
+            log.error("Error processing photo {}: {}", file.getOriginalFilename(), e.getMessage(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Error procesando la foto: " + e.getMessage());
+                    "Error processing photo: " + e.getMessage());
         }
     }
 
-    public void eliminarFoto(UUID id) {
+    public void deletePhoto(UUID id) {
         Foto foto = fotoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Foto no encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found"));
 
         r2StorageService.delete("fotos/" + id + ".jpg");
         fotoRepository.delete(foto);
-        log.info("Foto eliminada manualmente: {}", foto.getCodigo());
+        log.info("Photo deleted manually: {}", foto.getCodigo());
     }
 
-    public List<Foto> eliminarExpiradas() {
-        List<Foto> expiradas = fotoRepository.findByExpiraEnBefore(OffsetDateTime.now(ZoneOffset.UTC));
-        for (Foto foto : expiradas) {
+    public List<Foto> deleteExpiredPhotos() {
+        List<Foto> expired = fotoRepository.findByExpiraEnBefore(OffsetDateTime.now(ZoneOffset.UTC));
+        for (Foto foto : expired) {
             r2StorageService.delete("fotos/" + foto.getId() + ".jpg");
             fotoRepository.delete(foto);
         }
-        log.info("Fotos expiradas eliminadas en limpieza: {}", expiradas.size());
-        return expiradas;
+        log.info("Expired photos deleted in cleanup: {}", expired.size());
+        return expired;
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private String extraerCodigo(String nombreArchivo) {
-        if (nombreArchivo == null || nombreArchivo.isBlank()) return "SIN_CODIGO";
-        int punto = nombreArchivo.lastIndexOf('.');
-        return (punto > 0 ? nombreArchivo.substring(0, punto) : nombreArchivo).toUpperCase();
+    private String extractCode(String filename) {
+        if (filename == null || filename.isBlank()) return "NO_CODE";
+        int dot = filename.lastIndexOf('.');
+        return (dot > 0 ? filename.substring(0, dot) : filename).toUpperCase();
     }
 
-    private LocalDateTime extraerFechaHoraExif(byte[] jpegBytes) {
+    private LocalDateTime extractExifDateTime(byte[] jpegBytes) {
         try {
             Metadata metadata = ImageMetadataReader.readMetadata(new ByteArrayInputStream(jpegBytes));
             ExifSubIFDDirectory dir = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
             if (dir != null) {
-                Date fecha = dir.getDateOriginal(TimeZone.getTimeZone(ZONA_MX));
-                if (fecha != null) {
-                    return fecha.toInstant().atZone(ZONA_MX).toLocalDateTime();
+                Date date = dir.getDateOriginal(TimeZone.getTimeZone(MX_ZONE));
+                if (date != null) {
+                    return date.toInstant().atZone(MX_ZONE).toLocalDateTime();
                 }
             }
         } catch (Exception e) {
-            log.warn("No se pudo leer EXIF, usando fecha actual: {}", e.getMessage());
+            log.warn("Could not read EXIF, using current date/time: {}", e.getMessage());
         }
-        return LocalDateTime.now(ZONA_MX);
+        return LocalDateTime.now(MX_ZONE);
     }
 }
