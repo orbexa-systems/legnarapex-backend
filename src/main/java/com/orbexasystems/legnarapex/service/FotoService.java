@@ -44,20 +44,20 @@ public class FotoService {
             byte[] processed = watermarkService.applyWatermark(bytes);
 
             UUID id = UUID.randomUUID();
-            String objectKey = "fotos/" + id + ".jpg";
+            String objectKey = "photos/" + id + ".jpg";
             String photoUrl = r2StorageService.upload(objectKey, processed);
 
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
             Foto foto = Foto.builder()
                     .id(id)
-                    .codigo(code)
-                    .lugarId(locationId)
-                    .fechaFoto(photoDateTime.toLocalDate())
-                    .horaFoto(photoDateTime.toLocalTime())
-                    .urlFoto(photoUrl)
-                    .fechaSubida(now)
-                    .expiraEn(now.plusDays(EXPIRY_DAYS))
+                    .code(code)
+                    .locationId(locationId)
+                    .photoDate(photoDateTime.toLocalDate())
+                    .photoTime(photoDateTime.toLocalTime())
+                    .photoUrl(photoUrl)
+                    .uploadedAt(now)
+                    .expiresAt(now.plusDays(EXPIRY_DAYS))
                     .build();
 
             return fotoRepository.save(foto);
@@ -75,15 +75,15 @@ public class FotoService {
         Foto foto = fotoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found"));
 
-        r2StorageService.delete("fotos/" + id + ".jpg");
+        r2StorageService.delete("photos/" + id + ".jpg");
         fotoRepository.delete(foto);
-        log.info("Photo deleted manually: {}", foto.getCodigo());
+        log.info("Photo deleted manually: {}", foto.getCode());
     }
 
     public List<Foto> deleteExpiredPhotos() {
-        List<Foto> expired = fotoRepository.findByExpiraEnBefore(OffsetDateTime.now(ZoneOffset.UTC));
+        List<Foto> expired = fotoRepository.findByExpiresAtBefore(OffsetDateTime.now(ZoneOffset.UTC));
         for (Foto foto : expired) {
-            r2StorageService.delete("fotos/" + foto.getId() + ".jpg");
+            r2StorageService.delete("photos/" + foto.getId() + ".jpg");
             fotoRepository.delete(foto);
         }
         log.info("Expired photos deleted in cleanup: {}", expired.size());

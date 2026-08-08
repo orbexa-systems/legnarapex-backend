@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "lugares", schema = "public")
+@Table(name = "locations", schema = "public")
 @Data
 public class Lugar {
 
@@ -18,10 +18,10 @@ public class Lugar {
     private UUID id;
 
     @Column(nullable = false)
-    private String nombre;
+    private String name;
 
     @Column(nullable = false)
-    private boolean activo = true;
+    private boolean active = true;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
