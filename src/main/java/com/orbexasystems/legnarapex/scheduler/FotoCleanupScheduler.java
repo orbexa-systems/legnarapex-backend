@@ -16,20 +16,15 @@ public class FotoCleanupScheduler {
 
     private final FotoService fotoService;
 
-    /**
-     * Cron de limpieza nocturna — corre cada día a las 2:00 AM (hora del servidor, UTC).
-     * Zona horaria México: 2:00 AM CST = 8:00 AM UTC.
-     *
-     * Elimina de Cloudflare R2 y de PostgreSQL todas las fotos expiradas.
-     */
+    // 2:00 AM Mexico City (CST/UTC-6) = 8:00 AM UTC
     @Scheduled(cron = "0 0 8 * * *", zone = "UTC")
-    public void limpiarFotosExpiradas() {
-        log.info("Iniciando limpieza de fotos expiradas...");
+    public void cleanUpExpiredPhotos() {
+        log.info("Starting expired photo cleanup...");
         try {
-            List<Foto> eliminadas = fotoService.eliminarExpiradas();
-            log.info("Limpieza completada — {} foto(s) eliminada(s)", eliminadas.size());
+            List<Foto> deleted = fotoService.deleteExpiredPhotos();
+            log.info("Cleanup completed — {} photo(s) deleted", deleted.size());
         } catch (Exception e) {
-            log.error("Error en limpieza de fotos expiradas", e);
+            log.error("Error during expired photo cleanup", e);
         }
     }
 }

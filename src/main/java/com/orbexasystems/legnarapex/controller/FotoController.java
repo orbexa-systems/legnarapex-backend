@@ -18,30 +18,18 @@ public class FotoController {
 
     private final FotoService fotoService;
 
-    /**
-     * Recibe un JPG, lo procesa (EXIF + marca de agua) y lo almacena en R2 + DB.
-     *
-     * Request: multipart/form-data
-     *   lugar_id  UUID  — ID del lugar de la sesión
-     *   file      File  — archivo JPG
-     *
-     * Response: 201 Created con el registro de la foto
-     */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Foto> upload(
-            @RequestParam("lugar_id") UUID lugarId,
+            @RequestParam("lugar_id") UUID locationId,
             @RequestParam("file") MultipartFile file
     ) {
-        Foto foto = fotoService.procesarYSubirFoto(lugarId, file);
+        Foto foto = fotoService.processAndUploadPhoto(locationId, file);
         return ResponseEntity.status(HttpStatus.CREATED).body(foto);
     }
 
-    /**
-     * Elimina una foto de R2 y de la base de datos.
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        fotoService.eliminarFoto(id);
+        fotoService.deletePhoto(id);
         return ResponseEntity.noContent().build();
     }
 }
