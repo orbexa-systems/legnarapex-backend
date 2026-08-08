@@ -24,7 +24,7 @@ class FotoCleanupSchedulerTest {
     @Test
     void cleanUpExpiredPhotos_callsDeleteExpiredPhotos() {
         when(fotoService.deleteExpiredPhotos()).thenReturn(List.of(
-                Foto.builder().id(UUID.randomUUID()).codigo("EXP1").build()
+                Foto.builder().id(UUID.randomUUID()).code("EXP1").build()
         ));
 
         fotoCleanupScheduler.cleanUpExpiredPhotos();

@@ -51,18 +51,17 @@ class FotoServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
 
         when(watermarkService.applyWatermark(any())).thenReturn(jpegBytes);
-        when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/fotos/id.jpg");
+        when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/photos/id.jpg");
         when(fotoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Foto result = fotoService.processAndUploadPhoto(locationId, file);
+        fotoService.processAndUploadPhoto(locationId, file);
 
         ArgumentCaptor<Foto> captor = ArgumentCaptor.forClass(Foto.class);
         verify(fotoRepository).save(captor.capture());
 
-        assertThat(captor.getValue().getCodigo()).isEqualTo("2V0A9780");
-        assertThat(captor.getValue().getLugarId()).isEqualTo(locationId);
-        assertThat(captor.getValue().getExpiraEn()).isAfter(captor.getValue().getFechaSubida());
-        assertThat(result).isNotNull();
+        assertThat(captor.getValue().getCode()).isEqualTo("2V0A9780");
+        assertThat(captor.getValue().getLocationId()).isEqualTo(locationId);
+        assertThat(captor.getValue().getExpiresAt()).isAfter(captor.getValue().getUploadedAt());
     }
 
     @Test
@@ -71,13 +70,13 @@ class FotoServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "IMG001.jpg", "image/jpeg", jpegBytes);
 
         when(watermarkService.applyWatermark(jpegBytes)).thenReturn(jpegBytes);
-        when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/fotos/id.jpg");
+        when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/photos/id.jpg");
         when(fotoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         fotoService.processAndUploadPhoto(UUID.randomUUID(), file);
 
         verify(watermarkService).applyWatermark(jpegBytes);
-        verify(r2StorageService).upload(argThat(k -> k.startsWith("fotos/") && k.endsWith(".jpg")), eq(jpegBytes));
+        verify(r2StorageService).upload(argThat(k -> k.startsWith("photos/") && k.endsWith(".jpg")), eq(jpegBytes));
     }
 
     @Test
@@ -94,12 +93,12 @@ class FotoServiceTest {
     @Test
     void deletePhoto_found_deletesFromR2AndRepository() {
         UUID id = UUID.randomUUID();
-        Foto foto = Foto.builder().id(id).codigo("TEST").build();
+        Foto foto = Foto.builder().id(id).code("TEST").build();
         when(fotoRepository.findById(id)).thenReturn(Optional.of(foto));
 
         fotoService.deletePhoto(id);
 
-        verify(r2StorageService).delete("fotos/" + id + ".jpg");
+        verify(r2StorageService).delete("photos/" + id + ".jpg");
         verify(fotoRepository).delete(foto);
     }
 
@@ -108,22 +107,22 @@ class FotoServiceTest {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         List<Foto> expired = List.of(
-                Foto.builder().id(id1).codigo("EXP1").build(),
-                Foto.builder().id(id2).codigo("EXP2").build()
+                Foto.builder().id(id1).code("EXP1").build(),
+                Foto.builder().id(id2).code("EXP2").build()
         );
-        when(fotoRepository.findByExpiraEnBefore(any())).thenReturn(expired);
+        when(fotoRepository.findByExpiresAtBefore(any())).thenReturn(expired);
 
         List<Foto> result = fotoService.deleteExpiredPhotos();
 
         assertThat(result).hasSize(2);
-        verify(r2StorageService).delete("fotos/" + id1 + ".jpg");
-        verify(r2StorageService).delete("fotos/" + id2 + ".jpg");
+        verify(r2StorageService).delete("photos/" + id1 + ".jpg");
+        verify(r2StorageService).delete("photos/" + id2 + ".jpg");
         verify(fotoRepository, times(2)).delete(any(Foto.class));
     }
 
     @Test
     void deleteExpiredPhotos_noExpiredPhotos_returnsEmptyList() {
-        when(fotoRepository.findByExpiraEnBefore(any())).thenReturn(List.of());
+        when(fotoRepository.findByExpiresAtBefore(any())).thenReturn(List.of());
 
         List<Foto> result = fotoService.deleteExpiredPhotos();
 
