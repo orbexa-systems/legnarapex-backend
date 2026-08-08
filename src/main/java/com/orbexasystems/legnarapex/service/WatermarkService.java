@@ -22,29 +22,21 @@ public class WatermarkService {
     public void init() {
         try (InputStream is = getClass().getResourceAsStream("/watermark/legnarapex.png")) {
             if (is == null) {
-                log.warn("Marca de agua no encontrada en /watermark/legnarapex.png — se procesarán fotos sin marca de agua");
+                log.warn("Watermark not found at /watermark/legnarapex.png — photos will be processed without watermark");
                 return;
             }
             watermarkImage = ImageIO.read(is);
-            log.info("Marca de agua cargada OK");
+            log.info("Watermark loaded OK");
         } catch (Exception e) {
-            log.error("Error cargando marca de agua", e);
+            log.error("Error loading watermark", e);
         }
     }
 
-    /**
-     * Aplica la marca de agua Legnarapex al JPG recibido.
-     * Redimensiona a máximo 2400px en el lado más largo.
-     * Si no hay imagen de marca de agua configurada, devuelve el JPG original.
-     *
-     * @param jpegBytes  bytes del JPG original
-     * @return           bytes del JPG procesado con marca de agua
-     */
-    public byte[] aplicarMarcaDeAgua(byte[] jpegBytes) throws Exception {
+    public byte[] applyWatermark(byte[] jpegBytes) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         if (watermarkImage == null) {
-            // Sin marca de agua: solo redimensionar
+            // no watermark configured: resize only
             Thumbnails.of(new ByteArrayInputStream(jpegBytes))
                     .size(2400, 2400)
                     .keepAspectRatio(true)
