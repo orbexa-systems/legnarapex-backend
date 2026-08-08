@@ -38,13 +38,13 @@ class FotoControllerTest {
         UUID locationId = UUID.randomUUID();
         Foto foto = Foto.builder()
                 .id(UUID.randomUUID())
-                .codigo("2V0A9780")
-                .lugarId(locationId)
-                .fechaFoto(LocalDate.now())
-                .horaFoto(LocalTime.now())
-                .urlFoto("https://cdn.example.com/fotos/test.jpg")
-                .fechaSubida(OffsetDateTime.now())
-                .expiraEn(OffsetDateTime.now().plusDays(8))
+                .code("2V0A9780")
+                .locationId(locationId)
+                .photoDate(LocalDate.now())
+                .photoTime(LocalTime.now())
+                .photoUrl("https://cdn.example.com/photos/test.jpg")
+                .uploadedAt(OffsetDateTime.now())
+                .expiresAt(OffsetDateTime.now().plusDays(8))
                 .build();
 
         when(fotoService.processAndUploadPhoto(any(), any())).thenReturn(foto);
@@ -57,7 +57,7 @@ class FotoControllerTest {
                         .file(file)
                         .param("lugar_id", locationId.toString()))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigo").value("2V0A9780"));
+                .andExpect(jsonPath("$.code").value("2V0A9780"));
     }
 
     @Test

@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "fotos", schema = "public")
+@Table(name = "photos", schema = "public")
 @Data
 @Builder
 @NoArgsConstructor
@@ -26,23 +26,23 @@ public class Foto {
     private UUID id;
 
     @Column(nullable = false)
-    private String codigo;
+    private String code;
 
-    @Column(name = "lugar_id", nullable = false)
-    private UUID lugarId;
+    @Column(name = "location_id", nullable = false)
+    private UUID locationId;
 
-    @Column(name = "fecha_foto", nullable = false)
-    private LocalDate fechaFoto;
+    @Column(name = "photo_date", nullable = false)
+    private LocalDate photoDate;
 
-    @Column(name = "hora_foto", nullable = false)
-    private LocalTime horaFoto;
+    @Column(name = "photo_time", nullable = false)
+    private LocalTime photoTime;
 
-    @Column(name = "url_foto", nullable = false)
-    private String urlFoto;
+    @Column(name = "photo_url", nullable = false)
+    private String photoUrl;
 
-    @Column(name = "fecha_subida")
-    private OffsetDateTime fechaSubida;
+    @Column(name = "uploaded_at")
+    private OffsetDateTime uploadedAt;
 
-    @Column(name = "expira_en", nullable = false)
-    private OffsetDateTime expiraEn;
+    @Column(name = "expires_at", nullable = false)
+    private OffsetDateTime expiresAt;
 }

@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface FotoRepository extends JpaRepository<Foto, UUID> {
-    List<Foto> findByExpiraEnBefore(OffsetDateTime ahora);
+    List<Foto> findByExpiresAtBefore(OffsetDateTime now);
 }
