@@ -16,6 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.time.*;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -36,9 +37,16 @@ public class FotoService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
         }
 
+        String code = extractCode(file.getOriginalFilename());
+
+        Optional<Foto> existing = fotoRepository.findByCode(code);
+        if (existing.isPresent()) {
+            log.info("Duplicate upload ignored (idempotent): {}", code);
+            return existing.get();
+        }
+
         try {
             byte[] bytes = file.getBytes();
-            String code = extractCode(file.getOriginalFilename());
             LocalDateTime photoDateTime = extractExifDateTime(bytes);
 
             byte[] processed = watermarkService.applyWatermark(bytes);
