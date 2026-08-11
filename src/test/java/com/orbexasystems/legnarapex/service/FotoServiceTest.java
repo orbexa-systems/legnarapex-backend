@@ -80,6 +80,20 @@ class FotoServiceTest {
     }
 
     @Test
+    void processAndUploadPhoto_duplicateCode_returnsExistingWithoutReprocessing() throws Exception {
+        byte[] jpegBytes = createMinimalJpeg();
+        MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
+        Foto existing = Foto.builder().id(UUID.randomUUID()).code("2V0A9780").build();
+        when(fotoRepository.findByCode("2V0A9780")).thenReturn(Optional.of(existing));
+
+        Foto result = fotoService.processAndUploadPhoto(UUID.randomUUID(), file);
+
+        assertThat(result).isSameAs(existing);
+        verifyNoInteractions(watermarkService, r2StorageService);
+        verify(fotoRepository, never()).save(any());
+    }
+
+    @Test
     void deletePhoto_notFound_throwsNotFound() {
         UUID id = UUID.randomUUID();
         when(fotoRepository.findById(id)).thenReturn(Optional.empty());
