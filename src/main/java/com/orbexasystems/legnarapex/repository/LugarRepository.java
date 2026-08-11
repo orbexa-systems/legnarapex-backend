@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface LugarRepository extends JpaRepository<Lugar, UUID> {
-    List<Lugar> findByActivoTrue();
+    List<Lugar> findByActiveTrue();
 }
