@@ -26,7 +26,7 @@ import java.util.UUID;
 public class FotoService {
 
     private static final ZoneId MX_ZONE = ZoneId.of("America/Mexico_City");
-    private static final int EXPIRY_DAYS = 8;
+    private static final int EXPIRY_DAYS = 1; // TODO: change back to 8 before production launch
 
     private final FotoRepository fotoRepository;
     private final R2StorageService r2StorageService;
