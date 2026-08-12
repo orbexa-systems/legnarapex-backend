@@ -29,7 +29,6 @@ public class FotoService {
     private static final int EXPIRY_DAYS = 8;
 
     private final FotoRepository fotoRepository;
-    private final WatermarkService watermarkService;
     private final R2StorageService r2StorageService;
 
     public Foto processAndUploadPhoto(UUID locationId, MultipartFile file) {
@@ -49,11 +48,9 @@ public class FotoService {
             byte[] bytes = file.getBytes();
             LocalDateTime photoDateTime = extractExifDateTime(bytes);
 
-            byte[] processed = watermarkService.applyWatermark(bytes);
-
             UUID id = UUID.randomUUID();
             String objectKey = "photos/" + id + ".jpg";
-            String photoUrl = r2StorageService.upload(objectKey, processed);
+            String photoUrl = r2StorageService.upload(objectKey, bytes);
 
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
