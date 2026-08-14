@@ -28,6 +28,7 @@ public class R2StorageService {
                         .bucket(bucketName)
                         .key(objectKey)
                         .contentType("image/jpeg")
+                        .cacheControl("public, max-age=604800, immutable")
                         .build(),
                 RequestBody.fromBytes(jpegBytes)
         );
