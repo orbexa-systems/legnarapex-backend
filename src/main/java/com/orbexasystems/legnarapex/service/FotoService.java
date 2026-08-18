@@ -87,10 +87,15 @@ public class FotoService {
 
     public List<Foto> deleteAllPhotos() {
         List<Foto> all = fotoRepository.findAll();
-        for (Foto foto : all) {
-            r2StorageService.delete("photos/" + foto.getId() + ".jpg");
-            fotoRepository.delete(foto);
+        if (all.isEmpty()) {
+            log.info("Weekly cleanup — no photos to delete");
+            return all;
         }
+        List<String> keys = all.stream()
+                .map(f -> "photos/" + f.getId() + ".jpg")
+                .collect(java.util.stream.Collectors.toList());
+        r2StorageService.deleteBatch(keys);
+        fotoRepository.deleteAllInBatch(all);
         log.info("Weekly cleanup completed — {} photo(s) deleted", all.size());
         return all;
     }
