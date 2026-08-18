@@ -117,16 +117,16 @@ class FotoServiceTest {
     }
 
     @Test
-    void deleteExpiredPhotos_deletesEachFromR2AndRepository() {
+    void deleteAllPhotos_deletesEachFromR2AndRepository() {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
-        List<Foto> expired = List.of(
+        List<Foto> all = List.of(
                 Foto.builder().id(id1).code("EXP1").build(),
                 Foto.builder().id(id2).code("EXP2").build()
         );
-        when(fotoRepository.findByExpiresAtBefore(any())).thenReturn(expired);
+        when(fotoRepository.findAll()).thenReturn(all);
 
-        List<Foto> result = fotoService.deleteExpiredPhotos();
+        List<Foto> result = fotoService.deleteAllPhotos();
 
         assertThat(result).hasSize(2);
         verify(r2StorageService).delete("photos/" + id1 + ".jpg");
@@ -135,10 +135,10 @@ class FotoServiceTest {
     }
 
     @Test
-    void deleteExpiredPhotos_noExpiredPhotos_returnsEmptyList() {
-        when(fotoRepository.findByExpiresAtBefore(any())).thenReturn(List.of());
+    void deleteAllPhotos_noPhotos_returnsEmptyList() {
+        when(fotoRepository.findAll()).thenReturn(List.of());
 
-        List<Foto> result = fotoService.deleteExpiredPhotos();
+        List<Foto> result = fotoService.deleteAllPhotos();
 
         assertThat(result).isEmpty();
         verifyNoInteractions(r2StorageService);
