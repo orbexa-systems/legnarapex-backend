@@ -27,6 +27,15 @@ public class FotoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(foto);
     }
 
+    @PostMapping(value = "/admin/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Foto> adminUpload(
+            @RequestParam("lugar_id") UUID locationId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        Foto foto = fotoService.processAndUploadPhotoWithWatermark(locationId, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(foto);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         fotoService.deletePhoto(id);
