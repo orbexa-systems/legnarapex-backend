@@ -85,14 +85,14 @@ public class FotoService {
         log.info("Photo deleted manually: {}", foto.getCode());
     }
 
-    public List<Foto> deleteExpiredPhotos() {
-        List<Foto> expired = fotoRepository.findByExpiresAtBefore(OffsetDateTime.now(ZoneOffset.UTC));
-        for (Foto foto : expired) {
+    public List<Foto> deleteAllPhotos() {
+        List<Foto> all = fotoRepository.findAll();
+        for (Foto foto : all) {
             r2StorageService.delete("photos/" + foto.getId() + ".jpg");
             fotoRepository.delete(foto);
         }
-        log.info("Expired photos deleted in cleanup: {}", expired.size());
-        return expired;
+        log.info("Weekly cleanup completed — {} photo(s) deleted", all.size());
+        return all;
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
