@@ -50,7 +50,6 @@ class FotoServiceTest {
         byte[] jpegBytes = createMinimalJpeg();
         MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
 
-        when(watermarkService.applyWatermark(any())).thenReturn(jpegBytes);
         when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/photos/id.jpg");
         when(fotoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -58,6 +57,7 @@ class FotoServiceTest {
 
         ArgumentCaptor<Foto> captor = ArgumentCaptor.forClass(Foto.class);
         verify(fotoRepository).save(captor.capture());
+        verifyNoInteractions(watermarkService);
 
         assertThat(captor.getValue().getCode()).isEqualTo("2V0A9780");
         assertThat(captor.getValue().getLocationId()).isEqualTo(locationId);
@@ -65,7 +65,7 @@ class FotoServiceTest {
     }
 
     @Test
-    void processAndUploadPhoto_validJpeg_appliesWatermarkAndUploadsToR2() throws Exception {
+    void processAndUploadPhotoWithWatermark_validJpeg_appliesWatermarkAndUploadsToR2() throws Exception {
         byte[] jpegBytes = createMinimalJpeg();
         MockMultipartFile file = new MockMultipartFile("file", "IMG001.jpg", "image/jpeg", jpegBytes);
 
@@ -73,10 +73,24 @@ class FotoServiceTest {
         when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/photos/id.jpg");
         when(fotoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        fotoService.processAndUploadPhoto(UUID.randomUUID(), file);
+        fotoService.processAndUploadPhotoWithWatermark(UUID.randomUUID(), file);
 
         verify(watermarkService).applyWatermark(jpegBytes);
         verify(r2StorageService).upload(argThat(k -> k.startsWith("photos/") && k.endsWith(".jpg")), eq(jpegBytes));
+    }
+
+    @Test
+    void processAndUploadPhotoWithWatermark_duplicateCode_returnsExistingWithoutReprocessing() throws Exception {
+        byte[] jpegBytes = createMinimalJpeg();
+        MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
+        Foto existing = Foto.builder().id(UUID.randomUUID()).code("2V0A9780").build();
+        when(fotoRepository.findByCode("2V0A9780")).thenReturn(Optional.of(existing));
+
+        Foto result = fotoService.processAndUploadPhotoWithWatermark(UUID.randomUUID(), file);
+
+        assertThat(result).isSameAs(existing);
+        verifyNoInteractions(watermarkService, r2StorageService);
+        verify(fotoRepository, never()).save(any());
     }
 
     @Test

@@ -76,6 +76,48 @@ class FotoControllerTest {
     }
 
     @Test
+    void adminUpload_validFile_returns201WithFoto() throws Exception {
+        UUID locationId = UUID.randomUUID();
+        Foto foto = Foto.builder()
+                .id(UUID.randomUUID())
+                .code("IMG001")
+                .locationId(locationId)
+                .photoDate(LocalDate.now())
+                .photoTime(LocalTime.now())
+                .photoUrl("https://cdn.example.com/photos/test.jpg")
+                .uploadedAt(OffsetDateTime.now())
+                .expiresAt(OffsetDateTime.now().plusDays(8))
+                .build();
+
+        when(fotoService.processAndUploadPhotoWithWatermark(any(), any())).thenReturn(foto);
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "IMG001.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[]{1, 2, 3}
+        );
+
+        mockMvc.perform(multipart("/fotos/admin/upload")
+                        .file(file)
+                        .param("lugar_id", locationId.toString()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.code").value("IMG001"));
+    }
+
+    @Test
+    void adminUpload_serviceThrowsBadRequest_returns400() throws Exception {
+        when(fotoService.processAndUploadPhotoWithWatermark(any(), any()))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty"));
+
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "empty.jpg", MediaType.IMAGE_JPEG_VALUE, new byte[0]
+        );
+
+        mockMvc.perform(multipart("/fotos/admin/upload")
+                        .file(file)
+                        .param("lugar_id", UUID.randomUUID().toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void delete_existingFoto_returns204() throws Exception {
         UUID id = UUID.randomUUID();
         doNothing().when(fotoService).deletePhoto(id);
