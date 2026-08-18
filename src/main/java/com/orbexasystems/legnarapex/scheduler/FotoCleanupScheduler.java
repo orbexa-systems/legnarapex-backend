@@ -16,8 +16,8 @@ public class FotoCleanupScheduler {
 
     private final FotoService fotoService;
 
-    // 1:00 AM Mexico City (CST/UTC-6) = 7:00 AM UTC
-    @Scheduled(cron = "0 0 7 * * *", zone = "UTC")
+    // TEST ONLY: 9:30 AM Mexico City (CST/UTC-6) = 15:30 UTC
+    @Scheduled(cron = "0 30 15 * * *", zone = "UTC")
     public void cleanUpExpiredPhotos() {
         log.info("Starting expired photo cleanup...");
         try {
