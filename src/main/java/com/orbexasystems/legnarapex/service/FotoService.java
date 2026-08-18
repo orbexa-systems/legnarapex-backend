@@ -26,7 +26,7 @@ import java.util.UUID;
 public class FotoService {
 
     private static final ZoneId MX_ZONE = ZoneId.of("America/Mexico_City");
-    private static final int EXPIRY_DAYS = 1; // TODO: change back to 8 before production launch
+    private static final int EXPIRY_DAYS = 8;
 
     private final FotoRepository fotoRepository;
     private final R2StorageService r2StorageService;
@@ -85,14 +85,19 @@ public class FotoService {
         log.info("Photo deleted manually: {}", foto.getCode());
     }
 
-    public List<Foto> deleteExpiredPhotos() {
-        List<Foto> expired = fotoRepository.findByExpiresAtBefore(OffsetDateTime.now(ZoneOffset.UTC));
-        for (Foto foto : expired) {
-            r2StorageService.delete("photos/" + foto.getId() + ".jpg");
-            fotoRepository.delete(foto);
+    public List<Foto> deleteAllPhotos() {
+        List<Foto> all = fotoRepository.findAll();
+        if (all.isEmpty()) {
+            log.info("Weekly cleanup — no photos to delete");
+            return all;
         }
-        log.info("Expired photos deleted in cleanup: {}", expired.size());
-        return expired;
+        List<String> keys = all.stream()
+                .map(f -> "photos/" + f.getId() + ".jpg")
+                .collect(java.util.stream.Collectors.toList());
+        r2StorageService.deleteBatch(keys);
+        fotoRepository.deleteAllInBatch(all);
+        log.info("Weekly cleanup completed — {} photo(s) deleted", all.size());
+        return all;
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

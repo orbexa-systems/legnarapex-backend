@@ -22,32 +22,32 @@ class FotoCleanupSchedulerTest {
     private FotoCleanupScheduler fotoCleanupScheduler;
 
     @Test
-    void cleanUpExpiredPhotos_callsDeleteExpiredPhotos() {
-        when(fotoService.deleteExpiredPhotos()).thenReturn(List.of(
+    void cleanUpAllPhotos_callsDeleteAllPhotos() {
+        when(fotoService.deleteAllPhotos()).thenReturn(List.of(
                 Foto.builder().id(UUID.randomUUID()).code("EXP1").build()
         ));
 
-        fotoCleanupScheduler.cleanUpExpiredPhotos();
+        fotoCleanupScheduler.cleanUpAllPhotos();
 
-        verify(fotoService).deleteExpiredPhotos();
+        verify(fotoService).deleteAllPhotos();
     }
 
     @Test
-    void cleanUpExpiredPhotos_serviceThrows_doesNotPropagateException() {
-        when(fotoService.deleteExpiredPhotos()).thenThrow(new RuntimeException("DB connection lost"));
+    void cleanUpAllPhotos_serviceThrows_doesNotPropagateException() {
+        when(fotoService.deleteAllPhotos()).thenThrow(new RuntimeException("DB connection lost"));
 
         // should not throw — scheduler must not crash on cleanup failure
-        fotoCleanupScheduler.cleanUpExpiredPhotos();
+        fotoCleanupScheduler.cleanUpAllPhotos();
 
-        verify(fotoService).deleteExpiredPhotos();
+        verify(fotoService).deleteAllPhotos();
     }
 
     @Test
-    void cleanUpExpiredPhotos_noExpiredPhotos_completes() {
-        when(fotoService.deleteExpiredPhotos()).thenReturn(List.of());
+    void cleanUpAllPhotos_noPhotos_completes() {
+        when(fotoService.deleteAllPhotos()).thenReturn(List.of());
 
-        fotoCleanupScheduler.cleanUpExpiredPhotos();
+        fotoCleanupScheduler.cleanUpAllPhotos();
 
-        verify(fotoService).deleteExpiredPhotos();
+        verify(fotoService).deleteAllPhotos();
     }
 }
