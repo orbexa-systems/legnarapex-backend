@@ -16,15 +16,15 @@ public class FotoCleanupScheduler {
 
     private final FotoService fotoService;
 
-    // TEST ONLY: 9:30 AM Mexico City (CST/UTC-6) = 15:30 UTC
-    @Scheduled(cron = "0 30 15 * * *", zone = "UTC")
-    public void cleanUpExpiredPhotos() {
-        log.info("Starting expired photo cleanup...");
+    // TEST ONLY: 9:45 AM Mexico City (CST/UTC-6) = 15:45 UTC
+    @Scheduled(cron = "0 45 15 * * *", zone = "UTC")
+    public void cleanUpAllPhotos() {
+        log.info("Starting weekly photo cleanup...");
         try {
-            List<Foto> deleted = fotoService.deleteExpiredPhotos();
-            log.info("Cleanup completed — {} photo(s) deleted", deleted.size());
+            List<Foto> deleted = fotoService.deleteAllPhotos();
+            log.info("Weekly cleanup completed — {} photo(s) deleted", deleted.size());
         } catch (Exception e) {
-            log.error("Error during expired photo cleanup", e);
+            log.error("Error during weekly photo cleanup", e);
         }
     }
 }
