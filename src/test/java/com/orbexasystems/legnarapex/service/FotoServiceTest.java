@@ -117,7 +117,7 @@ class FotoServiceTest {
     }
 
     @Test
-    void deleteAllPhotos_deletesEachFromR2AndRepository() {
+    void deleteAllPhotos_deletesViaR2BulkAndRepositoryBatch() {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         List<Foto> all = List.of(
@@ -129,9 +129,8 @@ class FotoServiceTest {
         List<Foto> result = fotoService.deleteAllPhotos();
 
         assertThat(result).hasSize(2);
-        verify(r2StorageService).delete("photos/" + id1 + ".jpg");
-        verify(r2StorageService).delete("photos/" + id2 + ".jpg");
-        verify(fotoRepository, times(2)).delete(any(Foto.class));
+        verify(r2StorageService).deleteBatch(List.of("photos/" + id1 + ".jpg", "photos/" + id2 + ".jpg"));
+        verify(fotoRepository).deleteAllInBatch(all);
     }
 
     @Test
