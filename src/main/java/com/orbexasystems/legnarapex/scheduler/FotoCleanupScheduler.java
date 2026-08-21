@@ -16,8 +16,8 @@ public class FotoCleanupScheduler {
 
     private final FotoService fotoService;
 
-    // TEST ONLY: 9:45 AM Mexico City (CST/UTC-6) = 15:45 UTC
-    @Scheduled(cron = "0 45 15 * * *", zone = "UTC")
+    // Every Wednesday at 9:45 AM Mexico City (CST/UTC-6) = 15:45 UTC
+    @Scheduled(cron = "0 45 15 * * WED", zone = "UTC")
     public void cleanUpAllPhotos() {
         log.info("Starting weekly photo cleanup...");
         try {
