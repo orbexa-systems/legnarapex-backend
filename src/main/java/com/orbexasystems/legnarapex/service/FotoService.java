@@ -30,8 +30,17 @@ public class FotoService {
 
     private final FotoRepository fotoRepository;
     private final R2StorageService r2StorageService;
+    private final WatermarkService watermarkService;
 
     public Foto processAndUploadPhoto(UUID locationId, MultipartFile file) {
+        return doProcess(locationId, file, false);
+    }
+
+    public Foto processAndUploadPhotoWithWatermark(UUID locationId, MultipartFile file) {
+        return doProcess(locationId, file, true);
+    }
+
+    private Foto doProcess(UUID locationId, MultipartFile file, boolean applyWatermark) {
         if (file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty");
         }
@@ -47,10 +56,11 @@ public class FotoService {
         try {
             byte[] bytes = file.getBytes();
             LocalDateTime photoDateTime = extractExifDateTime(bytes);
+            byte[] toUpload = applyWatermark ? watermarkService.applyWatermark(bytes) : bytes;
 
             UUID id = UUID.randomUUID();
             String objectKey = "photos/" + id + ".jpg";
-            String photoUrl = r2StorageService.upload(objectKey, bytes);
+            String photoUrl = r2StorageService.upload(objectKey, toUpload);
 
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
