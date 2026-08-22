@@ -17,15 +17,11 @@ class WatermarkServiceTest {
     @BeforeEach
     void setUp() {
         watermarkService = new WatermarkService();
-        // init() finds no legnarapex.png in test classpath — watermarkImage stays null
-        watermarkService.init();
     }
 
     @Test
-    void applyWatermark_withoutWatermarkFile_returnsValidJpeg() throws Exception {
-        byte[] input = createJpeg(100, 100);
-
-        byte[] result = watermarkService.applyWatermark(input);
+    void applyWatermark_returnsValidJpeg() throws Exception {
+        byte[] result = watermarkService.applyWatermark(createJpeg(100, 100));
 
         assertThat(result).isNotEmpty();
         assertThat(ImageIO.read(new ByteArrayInputStream(result))).isNotNull();
@@ -33,9 +29,7 @@ class WatermarkServiceTest {
 
     @Test
     void applyWatermark_outputRespects2400pxLimit() throws Exception {
-        byte[] input = createJpeg(3000, 2000);
-
-        byte[] result = watermarkService.applyWatermark(input);
+        byte[] result = watermarkService.applyWatermark(createJpeg(3000, 2000));
 
         BufferedImage decoded = ImageIO.read(new ByteArrayInputStream(result));
         assertThat(decoded.getWidth()).isLessThanOrEqualTo(2400);
@@ -44,9 +38,7 @@ class WatermarkServiceTest {
 
     @Test
     void applyWatermark_smallImage_doesNotUpscale() throws Exception {
-        byte[] input = createJpeg(100, 80);
-
-        byte[] result = watermarkService.applyWatermark(input);
+        byte[] result = watermarkService.applyWatermark(createJpeg(100, 80));
 
         BufferedImage decoded = ImageIO.read(new ByteArrayInputStream(result));
         assertThat(decoded.getWidth()).isLessThanOrEqualTo(2400);
