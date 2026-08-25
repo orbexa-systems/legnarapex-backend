@@ -90,7 +90,7 @@ public class FotoService {
         Foto foto = fotoRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found"));
 
-        r2StorageService.delete("photos/" + id + ".jpg");
+        r2StorageService.delete(r2KeyFromUrl(foto.getPhotoUrl()));
         fotoRepository.delete(foto);
         log.info("Photo deleted manually: {}", foto.getCode());
     }
@@ -102,7 +102,7 @@ public class FotoService {
             return all;
         }
         List<String> keys = all.stream()
-                .map(f -> "photos/" + f.getId() + ".jpg")
+                .map(f -> r2KeyFromUrl(f.getPhotoUrl()))
                 .collect(java.util.stream.Collectors.toList());
         r2StorageService.deleteBatch(keys);
         fotoRepository.deleteAllInBatch(all);
@@ -111,6 +111,12 @@ public class FotoService {
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private String r2KeyFromUrl(String photoUrl) {
+        // URL format: https://<host>/photos/<uuid>.jpg  →  key: photos/<uuid>.jpg
+        int idx = photoUrl.indexOf("/photos/");
+        return idx >= 0 ? photoUrl.substring(idx + 1) : photoUrl;
+    }
 
     private String extractCode(String filename) {
         if (filename == null || filename.isBlank()) return "NO_CODE";

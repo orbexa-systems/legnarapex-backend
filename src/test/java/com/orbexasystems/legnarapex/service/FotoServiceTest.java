@@ -119,31 +119,36 @@ class FotoServiceTest {
     }
 
     @Test
-    void deletePhoto_found_deletesFromR2AndRepository() {
-        UUID id = UUID.randomUUID();
-        Foto foto = Foto.builder().id(id).code("TEST").build();
-        when(fotoRepository.findById(id)).thenReturn(Optional.of(foto));
+    void deletePhoto_found_deletesFromR2UsingUrlKeyAndRepository() {
+        UUID dbId  = UUID.randomUUID();
+        UUID r2Id  = UUID.randomUUID();
+        String url = "https://pub-xxx.r2.dev/photos/" + r2Id + ".jpg";
+        Foto foto  = Foto.builder().id(dbId).code("TEST").photoUrl(url).build();
+        when(fotoRepository.findById(dbId)).thenReturn(Optional.of(foto));
 
-        fotoService.deletePhoto(id);
+        fotoService.deletePhoto(dbId);
 
-        verify(r2StorageService).delete("photos/" + id + ".jpg");
+        // must use the UUID from photo_url, not the DB entity id
+        verify(r2StorageService).delete("photos/" + r2Id + ".jpg");
         verify(fotoRepository).delete(foto);
     }
 
     @Test
     void deleteAllPhotos_deletesViaR2BulkAndRepositoryBatch() {
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
+        UUID r2Id1 = UUID.randomUUID();
+        UUID r2Id2 = UUID.randomUUID();
         List<Foto> all = List.of(
-                Foto.builder().id(id1).code("EXP1").build(),
-                Foto.builder().id(id2).code("EXP2").build()
+                Foto.builder().id(UUID.randomUUID()).code("EXP1")
+                        .photoUrl("https://pub-xxx.r2.dev/photos/" + r2Id1 + ".jpg").build(),
+                Foto.builder().id(UUID.randomUUID()).code("EXP2")
+                        .photoUrl("https://pub-xxx.r2.dev/photos/" + r2Id2 + ".jpg").build()
         );
         when(fotoRepository.findAll()).thenReturn(all);
 
         List<Foto> result = fotoService.deleteAllPhotos();
 
         assertThat(result).hasSize(2);
-        verify(r2StorageService).deleteBatch(List.of("photos/" + id1 + ".jpg", "photos/" + id2 + ".jpg"));
+        verify(r2StorageService).deleteBatch(List.of("photos/" + r2Id1 + ".jpg", "photos/" + r2Id2 + ".jpg"));
         verify(fotoRepository).deleteAllInBatch(all);
     }
 
