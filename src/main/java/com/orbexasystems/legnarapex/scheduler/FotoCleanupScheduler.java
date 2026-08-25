@@ -16,8 +16,8 @@ public class FotoCleanupScheduler {
 
     private final FotoService fotoService;
 
-    // TEST: fire at 00:53 UTC on 2026-08-24 — revert to Wednesday 15:45 UTC after test
-    @Scheduled(cron = "0 53 0 * * *", zone = "UTC")
+    // Every Friday at 7:00 AM Mexico City time
+    @Scheduled(cron = "0 0 7 * * FRI", zone = "America/Mexico_City")
     public void cleanUpAllPhotos() {
         log.info("Starting weekly photo cleanup...");
         try {
