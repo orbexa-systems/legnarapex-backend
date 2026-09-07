@@ -105,7 +105,7 @@ public class FotoService {
                 .map(f -> r2KeyFromUrl(f.getPhotoUrl()))
                 .collect(java.util.stream.Collectors.toList());
         r2StorageService.deleteBatch(keys);
-        fotoRepository.deleteAllInBatch(all);
+        fotoRepository.deleteAllInBatch();
         log.info("Weekly cleanup completed — {} photo(s) deleted", all.size());
         return all;
     }
