@@ -58,4 +58,13 @@ public class FotoController {
         fotoService.deletePhoto(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/admin/cleanup")
+    public ResponseEntity<java.util.Map<String, Object>> manualCleanup(
+            @RequestHeader(value = "X-Internal-Key", required = false) String key
+    ) {
+        requireInternalKey(key);
+        var deleted = fotoService.deleteAllPhotos();
+        return ResponseEntity.ok(java.util.Map.of("deleted", deleted.size()));
+    }
 }
