@@ -16,13 +16,13 @@ public class FotoCleanupScheduler {
 
     private final FotoService fotoService;
 
-    // Every Friday at 7:00 AM Mexico City time
-    @Scheduled(cron = "0 0 7 * * FRI", zone = "America/Mexico_City")
+    // Every day at 3:00 AM Mexico City time
+    @Scheduled(cron = "0 0 3 * * *", zone = "America/Mexico_City")
     public void cleanUpAllPhotos() {
-        log.info("Starting weekly photo cleanup...");
+        log.info("Starting daily photo cleanup...");
         try {
             List<Foto> deleted = fotoService.deleteAllPhotos();
-            log.info("Weekly cleanup completed — {} photo(s) deleted", deleted.size());
+            log.info("Daily cleanup completed — {} photo(s) deleted", deleted.size());
         } catch (Exception e) {
             log.error("Error during weekly photo cleanup", e);
         }
