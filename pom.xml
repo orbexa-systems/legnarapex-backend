@@ -72,11 +72,7 @@
       <artifactId>s3</artifactId>
     </dependency>
 
-    <!-- Email -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-mail</artifactId>
-    </dependency>
+    <!-- Resend — HTTP email API (replaces spring-boot-starter-mail, blocked by Railway SMTP) -->
 
     <!-- Lombok -->
     <dependency>
