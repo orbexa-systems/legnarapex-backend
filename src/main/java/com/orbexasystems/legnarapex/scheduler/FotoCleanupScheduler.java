@@ -21,7 +21,7 @@ public class FotoCleanupScheduler {
 
     @Schedules({
         @Scheduled(cron = "0 0 3 * * *", zone = "America/Mexico_City"),
-        @Scheduled(initialDelay = 300_000L, fixedDelay = Long.MAX_VALUE)
+        @Scheduled(initialDelay = 180_000L, fixedDelay = Long.MAX_VALUE)
     })
     public void cleanUpAllPhotos() {
         log.info("Starting daily photo cleanup...");

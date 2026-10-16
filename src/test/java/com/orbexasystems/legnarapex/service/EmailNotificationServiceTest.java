@@ -2,83 +2,85 @@ package com.orbexasystems.legnarapex.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
-@ExtendWith(MockitoExtension.class)
 class EmailNotificationServiceTest {
 
-    @Mock private JavaMailSender mailSender;
-
-    @InjectMocks
-    private EmailNotificationService emailNotificationService;
+    private MockRestServiceServer server;
+    private EmailNotificationService service;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(emailNotificationService, "from", "sender@gmail.com");
-        ReflectionTestUtils.setField(emailNotificationService, "notifyTo", "recipient@gmail.com");
+        RestClient.Builder builder = RestClient.builder();
+        server = MockRestServiceServer.bindTo(builder).build();
+        service = new EmailNotificationService(builder);
+        ReflectionTestUtils.setField(service, "apiKey", "test-key");
+        ReflectionTestUtils.setField(service, "from", "onboarding@resend.dev");
+        ReflectionTestUtils.setField(service, "notifyTo", "recipient@gmail.com");
     }
 
     @Test
-    void sendCleanupSuccess_withDeletedPhotos_sendsEmailWithCount() {
-        emailNotificationService.sendCleanupSuccess(5);
+    void sendCleanupSuccess_withDeletedPhotos_callsResendApi() {
+        server.expect(requestTo("https://api.resend.com/emails"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header("Authorization", "Bearer test-key"))
+                .andExpect(jsonPath("$.to[0]").value("recipient@gmail.com"))
+                .andExpect(jsonPath("$.subject").value(org.hamcrest.Matchers.containsString("5")))
+                .andExpect(jsonPath("$.text").value(org.hamcrest.Matchers.containsString("5")))
+                .andRespond(withSuccess("{\"id\":\"abc\"}", MediaType.APPLICATION_JSON));
 
-        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender).send(captor.capture());
+        service.sendCleanupSuccess(5);
 
-        SimpleMailMessage sent = captor.getValue();
-        assertThat(sent.getSubject()).contains("5");
-        assertThat(sent.getText()).contains("5");
-        assertThat(sent.getTo()).containsExactly("recipient@gmail.com");
+        server.verify();
     }
 
     @Test
-    void sendCleanupSuccess_withZeroPhotos_sendsEmailWithNoPhotosMessage() {
-        emailNotificationService.sendCleanupSuccess(0);
+    void sendCleanupSuccess_withZeroPhotos_sendsNoPhotosMessage() {
+        server.expect(requestTo("https://api.resend.com/emails"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(jsonPath("$.subject").value(org.hamcrest.Matchers.containsString("sin fotos")))
+                .andRespond(withSuccess("{\"id\":\"abc\"}", MediaType.APPLICATION_JSON));
 
-        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender).send(captor.capture());
+        service.sendCleanupSuccess(0);
 
-        assertThat(captor.getValue().getSubject()).contains("sin fotos");
+        server.verify();
     }
 
     @Test
-    void sendCleanupFailure_sendsEmailWithErrorMessage() {
-        emailNotificationService.sendCleanupFailure("DB connection lost");
+    void sendCleanupFailure_sendsErrorMessage() {
+        server.expect(requestTo("https://api.resend.com/emails"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(jsonPath("$.subject").value(org.hamcrest.Matchers.containsString("ERROR")))
+                .andExpect(jsonPath("$.text").value(org.hamcrest.Matchers.containsString("DB connection lost")))
+                .andRespond(withSuccess("{\"id\":\"abc\"}", MediaType.APPLICATION_JSON));
 
-        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender).send(captor.capture());
+        service.sendCleanupFailure("DB connection lost");
 
-        SimpleMailMessage sent = captor.getValue();
-        assertThat(sent.getSubject()).contains("ERROR");
-        assertThat(sent.getText()).contains("DB connection lost");
+        server.verify();
     }
 
     @Test
-    void send_whenCredentialsNotConfigured_skipsEmail() {
-        ReflectionTestUtils.setField(emailNotificationService, "from", "");
-        ReflectionTestUtils.setField(emailNotificationService, "notifyTo", "");
+    void send_whenApiKeyNotConfigured_skipsRequest() {
+        ReflectionTestUtils.setField(service, "apiKey", "");
 
-        emailNotificationService.sendCleanupSuccess(3);
+        service.sendCleanupSuccess(3);
 
-        verifyNoInteractions(mailSender);
+        server.verify(); // no requests expected
     }
 
     @Test
-    void send_whenMailSenderThrows_doesNotPropagateException() {
-        doThrow(new org.springframework.mail.MailSendException("SMTP error"))
-                .when(mailSender).send(any(SimpleMailMessage.class));
+    void send_whenResendReturnsError_doesNotPropagateException() {
+        server.expect(requestTo("https://api.resend.com/emails"))
+                .andRespond(withServerError());
 
         // should not throw
-        emailNotificationService.sendCleanupSuccess(2);
+        service.sendCleanupSuccess(2);
     }
 }
