@@ -20,7 +20,7 @@ public class FotoCleanupScheduler {
     private final EmailNotificationService emailNotificationService;
 
     @Schedules({
-        @Scheduled(cron = "0 0 11 * * SAT", zone = "America/Mexico_City"),
+        @Scheduled(cron = "0 0 23 * * SAT", zone = "America/Mexico_City"),
         @Scheduled(initialDelay = 180_000L, fixedDelay = Long.MAX_VALUE)
     })
     public void cleanUpAllPhotos() {
