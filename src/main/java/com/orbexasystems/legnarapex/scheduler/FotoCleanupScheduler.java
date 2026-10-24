@@ -6,7 +6,6 @@ import com.orbexasystems.legnarapex.service.FotoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.annotation.Schedules;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,10 +18,7 @@ public class FotoCleanupScheduler {
     private final FotoService fotoService;
     private final EmailNotificationService emailNotificationService;
 
-    @Schedules({
-        @Scheduled(cron = "0 0 23 * * SAT", zone = "America/Mexico_City"),
-        @Scheduled(initialDelay = 180_000L, fixedDelay = Long.MAX_VALUE)
-    })
+    @Scheduled(cron = "0 0 23 * * SAT", zone = "America/Mexico_City")
     public void cleanUpAllPhotos() {
         log.info("Starting daily photo cleanup...");
         try {
