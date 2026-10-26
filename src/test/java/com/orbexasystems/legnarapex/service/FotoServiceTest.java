@@ -16,6 +16,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.*;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -80,11 +81,11 @@ class FotoServiceTest {
     }
 
     @Test
-    void processAndUploadPhotoWithWatermark_duplicateCode_returnsExistingWithoutReprocessing() throws Exception {
+    void processAndUploadPhotoWithWatermark_duplicateCodeSameDate_returnsExistingWithoutReprocessing() throws Exception {
         byte[] jpegBytes = createMinimalJpeg();
         MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
         Foto existing = Foto.builder().id(UUID.randomUUID()).code("2V0A9780").build();
-        when(fotoRepository.findByCode("2V0A9780")).thenReturn(Optional.of(existing));
+        when(fotoRepository.findByCodeAndPhotoDate(eq("2V0A9780"), any(LocalDate.class))).thenReturn(Optional.of(existing));
 
         Foto result = fotoService.processAndUploadPhotoWithWatermark(UUID.randomUUID(), file);
 
@@ -94,17 +95,34 @@ class FotoServiceTest {
     }
 
     @Test
-    void processAndUploadPhoto_duplicateCode_returnsExistingWithoutReprocessing() throws Exception {
+    void processAndUploadPhoto_duplicateCodeSameDate_returnsExistingWithoutReprocessing() throws Exception {
         byte[] jpegBytes = createMinimalJpeg();
         MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
         Foto existing = Foto.builder().id(UUID.randomUUID()).code("2V0A9780").build();
-        when(fotoRepository.findByCode("2V0A9780")).thenReturn(Optional.of(existing));
+        when(fotoRepository.findByCodeAndPhotoDate(eq("2V0A9780"), any(LocalDate.class))).thenReturn(Optional.of(existing));
 
         Foto result = fotoService.processAndUploadPhoto(UUID.randomUUID(), file);
 
         assertThat(result).isSameAs(existing);
         verifyNoInteractions(watermarkService, r2StorageService);
         verify(fotoRepository, never()).save(any());
+    }
+
+    @Test
+    void processAndUploadPhoto_sameCodeDifferentDate_savesAsNewPhoto() throws Exception {
+        // Same code that already exists for a different date must NOT be treated as duplicate
+        UUID locationId = UUID.randomUUID();
+        byte[] jpegBytes = createMinimalJpeg();
+        MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
+
+        when(fotoRepository.findByCodeAndPhotoDate(eq("2V0A9780"), any(LocalDate.class))).thenReturn(Optional.empty());
+        when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/photos/id.jpg");
+        when(fotoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        fotoService.processAndUploadPhoto(locationId, file);
+
+        verify(fotoRepository).save(any());
+        verify(r2StorageService).upload(anyString(), any());
     }
 
     @Test
@@ -149,7 +167,7 @@ class FotoServiceTest {
 
         assertThat(result).hasSize(2);
         verify(r2StorageService).deleteBatch(List.of("photos/" + r2Id1 + ".jpg", "photos/" + r2Id2 + ".jpg"));
-        verify(fotoRepository).deleteAllInBatch(all);
+        verify(fotoRepository).deleteAllInBatch();
     }
 
     @Test
