@@ -51,11 +51,9 @@ public class FotoService {
             byte[] bytes = file.getBytes();
             LocalDateTime photoDateTime = extractExifDateTime(bytes);
 
-            Optional<Foto> existing = fotoRepository.findByCodeAndPhotoDateAndPhotoTime(
-                    code, photoDateTime.toLocalDate(), photoDateTime.toLocalTime());
+            Optional<Foto> existing = fotoRepository.findByCodeAndPhotoDate(code, photoDateTime.toLocalDate());
             if (existing.isPresent()) {
-                log.info("Duplicate upload ignored (idempotent): {} on {} at {}",
-                        code, photoDateTime.toLocalDate(), photoDateTime.toLocalTime());
+                log.info("Duplicate upload ignored (idempotent): {} on {}", code, photoDateTime.toLocalDate());
                 return existing.get();
             }
             byte[] toUpload = applyWatermark ? watermarkService.applyWatermark(bytes) : bytes;

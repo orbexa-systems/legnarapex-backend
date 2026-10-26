@@ -17,7 +17,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.*;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -86,7 +85,7 @@ class FotoServiceTest {
         byte[] jpegBytes = createMinimalJpeg();
         MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
         Foto existing = Foto.builder().id(UUID.randomUUID()).code("2V0A9780").build();
-        when(fotoRepository.findByCodeAndPhotoDateAndPhotoTime(eq("2V0A9780"), any(LocalDate.class), any(LocalTime.class))).thenReturn(Optional.of(existing));
+        when(fotoRepository.findByCodeAndPhotoDate(eq("2V0A9780"), any(LocalDate.class))).thenReturn(Optional.of(existing));
 
         Foto result = fotoService.processAndUploadPhotoWithWatermark(UUID.randomUUID(), file);
 
@@ -100,7 +99,7 @@ class FotoServiceTest {
         byte[] jpegBytes = createMinimalJpeg();
         MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
         Foto existing = Foto.builder().id(UUID.randomUUID()).code("2V0A9780").build();
-        when(fotoRepository.findByCodeAndPhotoDateAndPhotoTime(eq("2V0A9780"), any(LocalDate.class), any(LocalTime.class))).thenReturn(Optional.of(existing));
+        when(fotoRepository.findByCodeAndPhotoDate(eq("2V0A9780"), any(LocalDate.class))).thenReturn(Optional.of(existing));
 
         Foto result = fotoService.processAndUploadPhoto(UUID.randomUUID(), file);
 
@@ -116,7 +115,7 @@ class FotoServiceTest {
         byte[] jpegBytes = createMinimalJpeg();
         MockMultipartFile file = new MockMultipartFile("file", "2V0A9780.jpg", "image/jpeg", jpegBytes);
 
-        when(fotoRepository.findByCodeAndPhotoDateAndPhotoTime(eq("2V0A9780"), any(LocalDate.class), any(LocalTime.class))).thenReturn(Optional.empty());
+        when(fotoRepository.findByCodeAndPhotoDate(eq("2V0A9780"), any(LocalDate.class))).thenReturn(Optional.empty());
         when(r2StorageService.upload(anyString(), any())).thenReturn("https://cdn.example.com/photos/id.jpg");
         when(fotoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
