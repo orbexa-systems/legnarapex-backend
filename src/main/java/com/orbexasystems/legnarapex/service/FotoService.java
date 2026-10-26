@@ -47,15 +47,15 @@ public class FotoService {
 
         String code = extractCode(file.getOriginalFilename());
 
+        Optional<Foto> existing = fotoRepository.findByCode(code);
+        if (existing.isPresent()) {
+            log.info("Duplicate upload ignored (idempotent): {}", code);
+            return existing.get();
+        }
+
         try {
             byte[] bytes = file.getBytes();
             LocalDateTime photoDateTime = extractExifDateTime(bytes);
-
-            Optional<Foto> existing = fotoRepository.findByCodeAndPhotoDate(code, photoDateTime.toLocalDate());
-            if (existing.isPresent()) {
-                log.info("Duplicate upload ignored (idempotent): {} on {}", code, photoDateTime.toLocalDate());
-                return existing.get();
-            }
             byte[] toUpload = applyWatermark ? watermarkService.applyWatermark(bytes) : bytes;
 
             UUID id = UUID.randomUUID();
